@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Predicción con Prophet</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background-color: #f5f5f5;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    input[type="file"] {
+      margin-bottom: 15px;
+    }
+
+    #resultado {
+      margin-top: 30px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #ddd;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Predicción con Prophet</h1>
+  
+  <input type="file" id="archivoCSV" accept=".csv">
+  <button onclick="enviarArchivo()">Predecir</button>
+
+  <div id="resultado"></div>
+
+  <script>
+    async function enviarArchivo() {
+      const archivoInput = document.getElementById("archivoCSV");
+      const resultadoDiv = document.getElementById("resultado");
+      resultadoDiv.innerHTML = "";
+
+      if (archivoInput.files.length === 0) {
+        resultadoDiv.innerHTML = "<p class='error'>Por favor selecciona un archivo CSV.</p>";
+        return;
+      }
+
+      const archivo = archivoInput.files[0];
+      const formData = new FormData();
+      formData.append("file", archivo);
+
+      try {
+        const response = await fetch("http://localhost:5000/predecir", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          resultadoDiv.innerHTML = `<p class='error'>Error: ${data.error}</p>`;
+          return;
+        }
+
+        let html = "<h2>Predicción para los próximos días</h2>";
+        html += "<table><tr><th>Fecha</th><th>Valor estimado (yhat)</th></tr>";
+
+        data.forEach(fila => {
+          html += `<tr><td>${fila.ds}</td><td>${fila.yhat.toFixed(2)}</td></tr>`;
+        });
+
+        html += "</table>";
+        resultadoDiv.innerHTML = html;
+
+      } catch (error) {
+        resultadoDiv.innerHTML = `<p class='error'>Error al conectar con el servidor: ${error.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
+
